@@ -36,6 +36,11 @@ class Product
     private $price;
 
     /**
+     * @ManyToMany(targetEntity="Cart", mappedBy="products")
+     */
+    private $carts;
+
+    /**
      * @var \DateTime
      *
      * @ORM\Column(name="date_added", type="date")
@@ -99,6 +104,22 @@ class Product
     public function getPrice()
     {
         return $this->price;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCarts()
+    {
+        return $this->carts;
+    }
+
+    /**
+     * @param mixed $carts
+     */
+    public function setCarts($carts)
+    {
+        $this->carts = $carts;
     }
 
     /**
