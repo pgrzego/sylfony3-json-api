@@ -30,10 +30,9 @@ class Cart
     private $totalPrice;
 
     /**
-     * @ORM\ManyToMany(targetEntity="AppBundle\Entity\Product", inversedBy="carts")
-     * @ORM\JoinTable(name="carts_products")
+     * @ORM\OneToMany(targetEntity="AppBundle\Entity\CartProduct", mappedBy="cart")
      */
-    private $products;
+    private $cartProducts;
 
     /**
      * @var \DateTime
@@ -44,7 +43,7 @@ class Cart
 
     public function __construct()
     {
-        $this->products = new ArrayCollection();
+        $this->cartProducts = new ArrayCollection();
     }
 
 
@@ -85,17 +84,17 @@ class Cart
     /**
      * @return mixed
      */
-    public function getProducts()
+    public function getCartProducts()
     {
-        return $this->products;
+        return $this->cartProducts;
     }
 
     /**
-     * @param mixed $products
+     * @param mixed $cartProducts
      */
-    public function setProducts($products)
+    public function setCartProducts($cartProducts)
     {
-        $this->products = $products;
+        $this->cartProducts = $cartProducts;
     }
 
     /**

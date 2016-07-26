@@ -36,9 +36,9 @@ class Product
     private $price;
 
     /**
-     * @ManyToMany(targetEntity="Cart", mappedBy="products")
+     * @ORM\OneToMany(targetEntity="AppBundle\Entity\CartProduct", mappedBy="product")
      */
-    private $carts;
+    private $cartProducts;
 
     /**
      * @var \DateTime
@@ -109,17 +109,17 @@ class Product
     /**
      * @return mixed
      */
-    public function getCarts()
+    public function getCartProducts()
     {
-        return $this->carts;
+        return $this->cartProducts;
     }
 
     /**
-     * @param mixed $carts
+     * @param mixed $cartProducts
      */
-    public function setCarts($carts)
+    public function setCartProducts($cartProducts)
     {
-        $this->carts = $carts;
+        $this->cartProducts = $cartProducts;
     }
 
     /**
