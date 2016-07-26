@@ -12,6 +12,7 @@ namespace AppBundle\Controller;
 use AppBundle\Entity\Cart;
 use AppBundle\Entity\CartProduct;
 use AppBundle\Entity\Product;
+use Doctrine\DBAL\Driver\PDOException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -56,9 +57,7 @@ class CartController extends Controller
      */
     public function removeAction($cartId) {
         // TODO: Consider if there should be a check here if the cart is empty
-
-        if ( !is_integer($cartId) )
-            throw new \Exception("Wrong type of parameter: $cartId. Should be integer.");
+        $cartId = intval($cartId);
         $em = $this->getDoctrine()->getManager();
         try {
             $cart = $em->getRepository("AppBundle:Cart")
@@ -69,7 +68,7 @@ class CartController extends Controller
             $em->remove($cart);
             $em->flush();
         } catch (HttpException $e) {
-            throw new HttpException($e->getMessage());
+            throw $e;
         } catch (\Exception $e) {
             throw new \Exception("There was a problem with the database");
         }
@@ -91,31 +90,21 @@ class CartController extends Controller
      * @throws \Exception
      */
     public function addProductAction($cartId, $productId) {
-        if ( !is_integer($cartId) )
-            throw new \Exception("Wrong type of parameter: $cartId. Should be integer.");
-        if ( !is_integer($productId) )
-            throw new \Exception("Wrong type of parameter: $productId. Should be integer.");
+        $cartId = intval($cartId);
+        $productId = intval($productId);
         $em = $this->getDoctrine()->getManager();
         try {
             $cart = $em->getRepository("AppBundle:Cart")
                 ->find($cartId);
-        } catch (\Exception $e) {
-            throw new \Exception("There was a problem with the database");
-        }
+            if ( is_null($cart) )
+                throw $this->createNotFoundException("Cart not found");
 
-        if ( is_null($cart) )
-            throw $this->createNotFoundException("Cart not found");
-        try {
             $product = $em->getRepository("AppBundle:Product")
             ->find($productId);
-        } catch (\Exception $e) {
-            throw new \Exception("There was a problem with the database");
-        }
-        if ( is_null($product) )
-            throw $this->createNotFoundException("Product not found");
 
+            if ( is_null($product) )
+                throw $this->createNotFoundException("Product not found");
 
-        try {
             $cartProduct = $em->getRepository("AppBundle:CartProduct")
                 ->findOneBy(array(
                     "product" => $productId,
@@ -139,8 +128,10 @@ class CartController extends Controller
                 "quantity"=>$cartProduct->getQuantity(),
                 "totalPrice"=>$cart->getTotalPrice()
             ));
+        } catch (HttpException $e) {
+            throw $e;
         } catch (\Exception $e) {
-            throw new \Exception("There was a problem with the database: ".$e->getMessage());
+            throw new \Exception("There was a problem with the database.");
         }
     }
 
@@ -157,43 +148,29 @@ class CartController extends Controller
      * @throws \Exception
      */
     public function removeProductAction($cartId, $productId) {
-        if ( !is_integer($cartId) )
-            throw new \Exception("Wrong type of parameter: $cartId. Should be integer.");
-        if ( !is_integer($productId) )
-            throw new \Exception("Wrong type of parameter: $productId. Should be integer.");
+        $cartId = intval($cartId);
+        $productId = intval($productId);
         $em = $this->getDoctrine()->getManager();
         try {
             $cart = $em->getRepository("AppBundle:Cart")
                 ->find($cartId);
-        } catch (\Exception $e) {
-            throw new \Exception("There was a problem with the database");
-        }
+            if ( is_null($cart) )
+                throw $this->createNotFoundException("Cart not found");
 
-        if ( is_null($cart) )
-            throw $this->createNotFoundException("Cart not found");
-        try {
             $product = $em->getRepository("AppBundle:Product")
                 ->find($productId);
-        } catch (\Exception $e) {
-            throw new \Exception("There was a problem with the database");
-        }
-        if ( is_null($product) )
-            throw $this->createNotFoundException("Product not found");
 
+            if ( is_null($product) )
+                throw $this->createNotFoundException("Product not found");
 
-        try {
             $cartProduct = $em->getRepository("AppBundle:CartProduct")
                 ->findOneBy(array(
                     "product" => $productId,
                     "cart" => $cartId
                 ));
-        } catch (\Exception $e) {
-            throw new \Exception("There was a problem with the database");
-        }
-        if (is_null($cartProduct))
-            throw $this->createNotFoundException("Product not found in this cart");
+            if (is_null($cartProduct))
+                throw $this->createNotFoundException("Product not found in this cart");
 
-        try {
             $quantity = $cartProduct->getQuantity()-1;
             if ( $quantity <= 0 )
                 $em->remove($cartProduct);
@@ -208,8 +185,10 @@ class CartController extends Controller
                 "quantity"=>$quantity,
                 "totalPrice"=>$cart->getTotalPrice()
             ));
+        } catch (HttpException $e) {
+            throw $e;
         } catch (\Exception $e) {
-            throw new \Exception("There was a problem with the database");
+            throw new \Exception("There was a problem with the database: ".$e->getMessage());
         }
     }
 
@@ -226,34 +205,23 @@ class CartController extends Controller
      * @throws \Exception
      */
     public function setProductAction($cartId, $productId, $quantity) {
-        if ( !is_integer($cartId) )
-            throw new \Exception("Wrong type of parameter: $cartId. Should be integer.");
-        if ( !is_integer($productId) )
-            throw new \Exception("Wrong type of parameter: $productId. Should be integer.");
-        if ( !is_integer($quantity) )
-            throw new \Exception("Wrong type of parameter: $quantity. Should be integer.");
+        $cartId = intval($cartId);
+        $productId = intval($productId);
+        $quantity = intval($quantity);
         $deltaQuantity = 0;
         $em = $this->getDoctrine()->getManager();
         try {
             $cart = $em->getRepository("AppBundle:Cart")
                 ->find($cartId);
-        } catch (\Exception $e) {
-            throw new \Exception("There was a problem with the database");
-        }
+            if ( is_null($cart) )
+                throw $this->createNotFoundException("Cart not found");
 
-        if ( is_null($cart) )
-            throw $this->createNotFoundException("Cart not found");
-        try {
             $product = $em->getRepository("AppBundle:Product")
                 ->find($productId);
-        } catch (\Exception $e) {
-            throw new \Exception("There was a problem with the database");
-        }
-        if ( is_null($product) )
-            throw $this->createNotFoundException("Product not found");
+            if ( is_null($product) )
+                throw $this->createNotFoundException("Product not found");
 
 
-        try {
             $cartProduct = $em->getRepository("AppBundle:CartProduct")
                 ->findOneBy(array(
                     "product" => $productId,
@@ -286,8 +254,10 @@ class CartController extends Controller
                 "quantity"=>$cartProduct->getQuantity(),
                 "totalPrice"=>$cart->getTotalPrice()
             ));
+        } catch (HttpException $e) {
+            throw $e;
         } catch (\Exception $e) {
-            throw new \Exception("There was a problem with the database");
+            throw new \Exception("There was a problem with the database: ".$e->getMessage());
         }
     }
 

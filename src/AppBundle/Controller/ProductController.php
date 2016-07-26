@@ -10,11 +10,13 @@ namespace AppBundle\Controller;
 
 
 use AppBundle\Entity\Product;
+use Doctrine\DBAL\DBALException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ProductController extends Controller
 {
@@ -31,7 +33,7 @@ class ProductController extends Controller
         $title = $request->request->get("title");
         $price = $request->request->get("price");
         // TODO: check if this data is sanitized by Symfony
-        if ( $title && $price ) {
+        if ( $title && $price>0 ) {
             $product = new Product();
             $product->setTitle($title);
             $product->setPrice($price);
@@ -47,7 +49,7 @@ class ProductController extends Controller
                 throw new \Exception("Problem with the database");
             }
         } else {
-            throw new \Exception("Missing parameters. Title and Price needed.");
+            throw new \Exception("Missing or bad parameters. Expected `title` as a string and `price` as a positive float.");
         }
     }
 
@@ -61,34 +63,31 @@ class ProductController extends Controller
      * @throws \Exception
      */
     public function removeAction($productId) {
-        if ( !is_integer($productId) )
-            throw new \Exception("Wrong type of parameter: $productId. Should be integer.");
+        $productId = intval($productId);
         $em = $this->getDoctrine()->getManager();
         try {
             $product = $em->getRepository("AppBundle:Product")
                 ->find($productId);
-        } catch (\Exception $e) {
-            throw new \Exception("There was a problem with the database");
-        }
-        if ( is_null($product) )
-            throw $this->createNotFoundException();
+            if ( is_null($product) )
+                throw $this->createNotFoundException();
 
-        // TODO: if it shouldn't check if product is inside cart then total price for every cart needs to be recalculated.
-        try {
+            // TODO: if it shouldn't check if product is inside cart then total price for every cart needs to be recalculated.
             $cartProducts = $em->getRepository("AppBundle:CartProduct")
                 ->findByProduct($productId);
-        } catch (\Exception $e) {
-            throw new \Exception("There was a problem with the database");
-        }
-        if ( !empty($cartProducts) ) {
-            throw new \Exception("Product exists in Carts. Can't remove it.");
-        }
+            if ( !empty($cartProducts) ) {
+                throw new \Exception("Product exists in Carts. Can't remove it.");
+            }
 
-        try {
             $em->remove($product);
             $em->flush();
+        } catch (HttpException $e) {
+            throw $e;
         } catch (\Exception $e) {
-            throw new \Exception("There was a problem with the database.");
+            if ( $e instanceof DBALException ) {
+                throw new \Exception("There was a problem with the database.");
+            } else {
+                throw $e;
+            }
         }
 
         return new JsonResponse(array(
