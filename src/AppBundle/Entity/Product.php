@@ -2,6 +2,7 @@
 
 namespace AppBundle\Entity;
 
+use Symfony\Component\Validator\Constraints as Assert;
 use Doctrine\ORM\Mapping as ORM;
 use JsonSerializable;
 
@@ -26,6 +27,7 @@ class Product implements JsonSerializable
      * @var string
      *
      * @ORM\Column(name="title", type="string", length=255, unique=true)
+     * @Assert\NotBlank(message="Product title is missing")
      */
     private $title;
 
@@ -33,6 +35,12 @@ class Product implements JsonSerializable
      * @var float
      *
      * @ORM\Column(name="price", type="float")
+     * @Assert\Range(
+     *     min=0,
+     *     max=1000,
+     *     minMessage = "The price must be at least {{ limit }}",
+     *     maxMessage = "The can't be greater than {{ limit }}"
+     * )
      */
     private $price;
 

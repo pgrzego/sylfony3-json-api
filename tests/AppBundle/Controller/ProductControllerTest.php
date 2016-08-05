@@ -9,49 +9,43 @@
 namespace Tests\AppBundle\Controller;
 
 
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use AppBundle\Test\ApiTestCase;
 use Symfony\Component\HttpFoundation\Response;
 
-class ProductControllerTest extends WebTestCase
+class ProductControllerTest extends ApiTestCase
 {
 
     public function testAddActionWithGoodData() {
-        $client = static::createClient();
+
 
         $newProductTitle = "testAddActionWithGoodData";
         $newProductPrice = 1.99;
 
-        $client->request(
+        $this->client->request(
             'POST',
-            '/products',
+            '/productsccc',
             array(),
             array(),
             array(
                 'CONTENT_TYPE' => 'application/json',
-                json_encode( [ "title"=>$newProductTitle, "price"=>$newProductPrice ] )
-            )
+            ),
+            json_encode( [ "title"=>$newProductTitle, "price"=>$newProductPrice ] )
         );
 
-        $response = $client->getResponse();
+        $response = $this->client->getResponse();
 
         // Assert a 201 status code
         $this->assertEquals(
             Response::HTTP_CREATED,
             $response->getStatusCode(),
-            "Status code is not ".Response::HTTP_CREATED
+            "Status code of the Response should be ".Response::HTTP_CREATED
         );
 
         // Assert that the "Location" header has "products"
-        $this->assertTrue(
-            $response->headers->contains(
-                'Location',
-                'products'
-            ),
-            'the Location header doesn\'t contain valid info.'
-        );
+        $this->assertTrue($response->headers->has('Location'));
 
         $productUrl = $response->headers->get("Location");
-        $client->request(
+        $this->client->request(
             'GET',
             $productUrl,
             array(),
@@ -62,14 +56,14 @@ class ProductControllerTest extends WebTestCase
         );
 
         // Assert the headers:
-        $response = $client->getResponse();
+        $response = $this->client->getResponse();
         // Assert that the "Content-Type" header is "application/json"
         $this->assertTrue(
-            $client->getResponse()->headers->contains(
+            $this->client->getResponse()->headers->contains(
                 'Content-Type',
                 'application/json' //will be application/vnd.api+json
             ),
-            'the "Content-Type" header is not "application/json"' // optional message shown on failure
+            'the "Content-Type" header of GET response should be "application/json"' // optional message shown on failure
         );
         // Assert a 200 status code
         $this->assertEquals(
@@ -81,17 +75,13 @@ class ProductControllerTest extends WebTestCase
         // Assert the content:
         $responseData = json_decode($response->getContent(), true);
         //Assert all the fields:
-        $this->assertTrue(
-            array_key_exists("title", $responseData)
-        );
-        $this->assertTrue(
-            array_key_exists("price", $responseData)
-        );
+        $this->assertArrayHasKey("title", $responseData);
+        $this->assertArrayHasKey("price", $responseData);
         //Assert their values:
         $this->assertEquals(
             $responseData["title"],
             $newProductTitle,
-            "Returned product's title is not the same as the one set."
+            "Returned product's title should be the same as the one set."
         );
         $this->assertEquals(
             $responseData["price"],
@@ -106,11 +96,7 @@ class ProductControllerTest extends WebTestCase
             'GET',
             '/products'
         );
-        // Assert that the response is a redirect to /demo/contact
-        $this->assertTrue(
-            $client->getResponse()->isRedirect('/products/list/1'),
-            'response is not a redirect to a pagination list'
-        );
+
     }
 
 }

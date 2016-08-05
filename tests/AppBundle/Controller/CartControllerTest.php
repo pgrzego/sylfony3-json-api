@@ -10,16 +10,15 @@ namespace Tests\AppBundle\Controller;
 
 
 
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use AppBundle\Test\ApiTestCase;
 
-class CartControllerTest extends WebTestCase
+class CartControllerTest extends ApiTestCase
 {
     public function testCartAdd() {
-        $client = static::createClient();
-        $client->request('POST', '/cart');
+        $this->client->request('POST', '/cart');
         // Assert that the "Content-Type" header is "application/json"
         $this->assertTrue(
-            $client->getResponse()->headers->contains(
+            $this->client->getResponse()->headers->contains(
                 'Content-Type',
                 'application/json'
             ),

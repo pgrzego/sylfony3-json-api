@@ -11,16 +11,17 @@ namespace AppBundle\Controller;
 
 use AppBundle\Entity\Product;
 use Doctrine\DBAL\DBALException;
+use Pagerfanta\Adapter\DoctrineORMAdapter;
+use Pagerfanta\Pagerfanta;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
-class ProductController extends Controller
+class ProductController extends BaseController
 {
 
     /**
@@ -39,18 +40,30 @@ class ProductController extends Controller
         $product->setPrice($data["price"]);
         $product->setDateAdded(new \DateTime());
 
+        $errors = $this->get('validator')->validate($product);
+        if ( count($errors) ) {
+            // TODO: Handle errors according to example http://jsonapi.org/examples/#error-objects-error-codes
+            $data = array(
+                'type' => 'validation_error',
+                'title' => 'There was a validation error',
+                'errors' => $errors
+            );
+            $response = new JsonResponse($data, Response::HTTP_UNPROCESSABLE_ENTITY);
+            $response->headers->set('Content-Type', 'application/vnd.api+json');
+            return $response;
+        }
+
         try {
             $em = $this->getDoctrine()->getManager();
             $em->persist($product);
             $em->flush();
-            $response = new JsonResponse(array(
-                "id" => $product->getId()
-            ));
+            $response = new JsonResponse($product);
             $response->setStatusCode(Response::HTTP_CREATED);
-            $response->headers->set("Location", $this->generateUrl('product_show', array('productId'=>$product->getId()), UrlGeneratorInterface::ABSOLUTE_URL));
+            $response->headers->set("Location", $this->generateUrl('products_show', array('productId'=>$product->getId()), UrlGeneratorInterface::ABSOLUTE_URL));
+            $response->headers->set('Content-Type', 'application/vnd.api+json');
             return $response;
         } catch (\Exception $e) {
-            throw new \Exception("Problem with the database");
+            throw $e;//new \Exception("Problem with the database");
         }
     }
 
@@ -91,9 +104,9 @@ class ProductController extends Controller
             }
         }
 
-        return new JsonResponse(array(
-            "id"=>$productId
-        ));
+        $response = new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        $response->headers->set('Content-Type', 'application/vnd.api+json');
+        return $response;
     }
 
     /**
@@ -121,23 +134,63 @@ class ProductController extends Controller
      */
     public function listAction(Request $request) {
         $productsPerPage = $this->getParameter("products_per_page");
+        $page = $request->query->get("page", 1);
 
-        $page = $request->query->get("page");
-        if ( is_null($page) ) $page = [ "number"=>1, "size"=>$productsPerPage ];
-        if ( !is_array($page) ) $page = [ "number"=>intval($page), "size"=>$productsPerPage ];
+        $qb = $this->getDoctrine()
+            ->getRepository('AppBundle:Product')
+            ->findAllQueryBuilder();
 
-        
+        $adapter = new DoctrineORMAdapter($qb);
+        $pagerfanta = new Pagerfanta($adapter);
+        $pagerfanta->setMaxPerPage($productsPerPage);
+        $pagerfanta->setCurrentPage($page);
 
-        return new JsonResponse($page);
+        $products = [];
+        foreach ($pagerfanta->getCurrentPageResults() as $result) {
+            $products[] = $result;
+        }
+
+        return new JsonResponse($page, Response::HTTP_OK);
     }
 
     /**
      * @Route("/products/{productId}", name="product_update")
      * @Method("PUT")
+     * @param int $productId
      * @param Request $request
+     * @return JsonResponse
      */
-    public function updateAction(Request $request) {
+    public function updateAction($productId, Request $request) {
 
+        $em = $this->getDoctrine()->getManager();
+        /** @var Product $product */
+        $product = $em->getRepository("AppBundle:Product")
+            ->find($productId);
+
+        if ( is_null($product) )
+            throw $this->createNotFoundException();
+
+        $data = json_decode( $request->getContent(), true );
+
+        $product->setTitle($data["title"]);
+        $product->setPrice($data["price"]);
+
+        $errors = $this->get('validator')->validate($product);
+        if ( count($errors) ) {
+            // TODO: Handle errors according to example http://jsonapi.org/examples/#error-objects-error-codes
+            $data = array(
+                'type' => 'validation_error',
+                'title' => 'There was a validation error',
+                'errors' => $errors
+            );
+            $response = new JsonResponse($data, Response::HTTP_UNPROCESSABLE_ENTITY);
+            $response->headers->set('Content-Type', 'application/vnd.api+json');
+            return $response;
+        }
+
+        $em->flush();
+
+        return new JsonResponse($product, Response::HTTP_OK);
     }
 
 }

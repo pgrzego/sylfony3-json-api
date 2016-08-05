@@ -5,6 +5,7 @@ namespace AppBundle\Entity;
 use Symfony\Component\Validator\Constraints as Assert;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use JsonSerializable;
 
 /**
  * Cart
@@ -12,7 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
  * @ORM\Table(name="cart")
  * @ORM\Entity(repositoryClass="AppBundle\Repository\CartRepository")
  */
-class Cart
+class Cart implements JsonSerializable
 {
     /**
      * @var int
@@ -122,6 +123,22 @@ class Cart
     public function getDateCreated()
     {
         return $this->dateCreated;
+    }
+
+    /**
+     * Specify data which should be serialized to JSON
+     * @link http://php.net/manual/en/jsonserializable.jsonserialize.php
+     * @return mixed data which can be serialized by <b>json_encode</b>,
+     * which is a value of any type other than a resource.
+     * @since 5.4.0
+     */
+    function jsonSerialize()
+    {
+        return [
+            "id" => $this->getId(),
+            "totalPrice" => $this->getTotalPrice(),
+            "created" => $this->getDateCreated()
+        ];
     }
 }
 
