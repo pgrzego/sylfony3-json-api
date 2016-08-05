@@ -3,6 +3,7 @@
 namespace AppBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * CartProduct
@@ -37,6 +38,12 @@ class CartProduct
      * @var int
      *
      * @ORM\Column(name="quantity", type="smallint")
+     * @Assert\Range(
+     *     min=0,
+     *     max=10,
+     *     minMessage = "There must be at least {{ limit }} examples of the same product in one cart",
+     *     maxMessage = "There cannot be more than {{ limit }} examples of the same product in one cart"
+     * )
      */
     private $quantity;
 

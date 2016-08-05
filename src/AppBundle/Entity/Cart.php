@@ -2,6 +2,7 @@
 
 namespace AppBundle\Entity;
 
+use Symfony\Component\Validator\Constraints as Assert;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -26,6 +27,8 @@ class Cart
      * @var float
      *
      * @ORM\Column(name="total_price", type="float")
+     * @Assert\Type(type="float", message="The value {{ value }} is not a valid price.")
+     * @Assert\Range(min=0, minMessage = "The price must be at least {{ limit }} USD")
      */
     private $totalPrice;
 

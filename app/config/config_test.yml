@@ -14,3 +14,7 @@ web_profiler:
 
 swiftmailer:
     disable_delivery: true
+# Doctrine Configuration
+doctrine:
+    dbal:
+        dbname:   "%test_database_name%"

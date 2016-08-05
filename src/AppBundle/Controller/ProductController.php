@@ -16,47 +16,48 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class ProductController extends Controller
 {
 
     /**
      * Adds a new product to the database.
-     * @Route("/product", name="product_add")
+     * @Route("/products", name="products_add")
      * @Method("POST")
      * @param Request $request
      * @return JsonResponse ID of the new product
      * @throws \Exception
      */
     public function addAction(Request $request) {
-        $title = $request->request->get("title");
-        $price = $request->request->get("price");
-        // TODO: check if this data is sanitized by Symfony
-        if ( $title && $price>0 ) {
-            $product = new Product();
-            $product->setTitle($title);
-            $product->setPrice($price);
-            $product->setDateAdded(new \DateTime());
-            try {
-                $em = $this->getDoctrine()->getManager();
-                $em->persist($product);
-                $em->flush();
-                return new JsonResponse(array(
-                   "id" => $product->getId()
-                ));
-            } catch (\Exception $e) {
-                throw new \Exception("Problem with the database");
-            }
-        } else {
-            throw new \Exception("Missing or bad parameters. Expected `title` as a string and `price` as a positive float.");
+        $data = json_decode($request->getContent(), true);
+
+        $product = new Product();
+        $product->setTitle($data["title"]);
+        $product->setPrice($data["price"]);
+        $product->setDateAdded(new \DateTime());
+
+        try {
+            $em = $this->getDoctrine()->getManager();
+            $em->persist($product);
+            $em->flush();
+            $response = new JsonResponse(array(
+                "id" => $product->getId()
+            ));
+            $response->setStatusCode(Response::HTTP_CREATED);
+            $response->headers->set("Location", $this->generateUrl('product_show', array('productId'=>$product->getId()), UrlGeneratorInterface::ABSOLUTE_URL));
+            return $response;
+        } catch (\Exception $e) {
+            throw new \Exception("Problem with the database");
         }
     }
 
     /**
      * Removes product from the database.
      * Doesn't allow to remove Product from the database as long as the Product is in any of the Carts.
-     * @Route("/product/{productId}", name="product_remove")
+     * @Route("/products/{productId}", name="products_remove")
      * @Method("DELETE")
      * @param int $productId
      * @return JsonResponse ID of removed Product
@@ -96,18 +97,42 @@ class ProductController extends Controller
     }
 
     /**
-     * @Route("/product/list/{page}", name="product_list", defaults={"page"=1} )
+     * Returns product information from the database.
+     * @Route("/products/{productId}", name="products_show")
      * @Method("GET")
-     * @param int $page
-     * @return JsonResponse Paginated list of products
+     * @param int $productId
+     * @return JsonResponse Product info
+     * @throws \Exception
      */
-    public function listAction($page) {
-        $productsPerPage = $this->getParameter("products_per_page");
-        // TODO: add bundle to paginate
+    public function showAction($productId) {
+        /** @var Product $product */
+        $product = $this->getDoctrine()->getRepository("AppBundle:Product")->findOneById($productId);
+        if ( is_null($product) ) {
+            throw $this->createNotFoundException();
+        } else {
+            return new JsonResponse($product,200);
+        }
     }
 
     /**
-     * @Route("/product/{productId}", name="product_update")
+     * @Route("/products", name="products_list" )
+     * @Method("GET")
+     * @return JsonResponse Paginated list of products
+     */
+    public function listAction(Request $request) {
+        $productsPerPage = $this->getParameter("products_per_page");
+
+        $page = $request->query->get("page");
+        if ( is_null($page) ) $page = [ "number"=>1, "size"=>$productsPerPage ];
+        if ( !is_array($page) ) $page = [ "number"=>intval($page), "size"=>$productsPerPage ];
+
+        
+
+        return new JsonResponse($page);
+    }
+
+    /**
+     * @Route("/products/{productId}", name="product_update")
      * @Method("PUT")
      * @param Request $request
      */

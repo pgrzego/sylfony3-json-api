@@ -17,6 +17,7 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class CartController extends Controller
@@ -233,8 +234,13 @@ class CartController extends Controller
                     $cartProduct->setProduct($product);
                     $cartProduct->setCart($cart);
                     $cartProduct->setQuantity($quantity);
-                    $em->persist($cartProduct);
-                    $deltaQuantity = $quantity;
+                    $errors = $this->get('validator')->validate($cartProduct);
+                    if ( count($errors) ) {
+                        $errorsString = (string) $errors;
+                        return new Response($errorsString);
+                    }
+                    //$em->persist($cartProduct);
+                    //$deltaQuantity = $quantity;
                 }
             } else {
                 if ( $quantity<=0 ) {
@@ -243,6 +249,12 @@ class CartController extends Controller
                 } else {
                     $deltaQuantity = $quantity - $cartProduct->getQuantity();
                     $cartProduct->setQuantity( $quantity );
+                    $validator = $this->get('validator');
+                    $errors = $validator->validate($cartProduct);
+                    if ( count($errors) ) {
+                        $errorsString = (string) $errors;
+                        throw new HttpException(409, $errorsString);
+                    }
                 }
             }
 
@@ -269,8 +281,7 @@ class CartController extends Controller
      * @throws \Exception
      */
     public function listProductsAction($cartId) {
-        if ( !is_integer($cartId) )
-            throw new \Exception("Wrong type of parameter: $cartId. Should be integer.");
+        $cartId = intval($cartId);
         $em = $this->getDoctrine()->getManager();
         $cart = $em->getRepository("AppBundle:Cart")
             ->find($cartId);
