@@ -29,7 +29,7 @@
         "sensio/framework-extra-bundle": "^3.0.2",
         "incenteev/composer-parameter-handler": "^2.0",
         "white-october/pagerfanta-bundle": "^1.0",
-        "guzzlehttp/guzzle": "^6.2"
+        "justinrainbow/json-schema": "~2.0"
     },
     "require-dev": {
         "sensio/generator-bundle": "^3.0",

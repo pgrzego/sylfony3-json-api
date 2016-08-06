@@ -53,7 +53,7 @@ class BaseController extends Controller
             $i++;
         }
 
-        return $this->createApiResponse($data, $statusCode);
+        return $this->createApiResponse(["errors"=>$data], $statusCode);
     }
 
 
@@ -72,5 +72,14 @@ class BaseController extends Controller
             "detail" => (($customDescription)?$customDescription:$elementType . " ". $elementId . " was not found on this server")
         ];
         return $this->createApiResponse($data, Response::HTTP_NOT_FOUND);
+    }
+
+    protected function createErrorResponse($title, $detail, $statusCode=Response::HTTP_BAD_REQUEST) {
+        $data = [
+            "status" => $statusCode,
+            "title" => $title,
+            "detail" => $detail
+        ];
+        return $this->createApiResponse(["errors"=>$data], $statusCode);
     }
 }

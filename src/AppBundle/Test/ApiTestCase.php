@@ -43,8 +43,13 @@ class ApiTestCase extends WebTestCase
     protected function onNotSuccessfulTest($e)
     {
         $this->printDebug('');
-        $this->printDebug('<error>Failure!</error> when making the following request: '.$this->client->getRequest()->getPathInfo());
-        //$this->printDebug($this->client->getResponse()->getContent());
+        $this->printDebug('<error>Failure!</error> when making the following request: '.$this->client->getRequest()->getMethod().": ".$this->client->getRequest()->getPathInfo());
+
+        $content = $this->client->getResponse()->getContent();
+        $start = strpos($content, "<title>");
+        $start = ( $start === false )?0:$start+7;
+        if ( $start ) $content = htmlspecialchars_decode( trim(substr($content,$start,strpos($content,"</title>")-$start)) );
+        $this->printDebug($content);
         $this->printDebug('');
         parent::onNotSuccessfulTest($e);
     }

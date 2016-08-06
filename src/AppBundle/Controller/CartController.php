@@ -71,6 +71,7 @@ class CartController extends BaseController
     public function removeAction($cartId) {
         // TODO: Consider if there should be a check here if the cart is empty
         $cartId = intval($cartId);
+
         $em = $this->getDoctrine()->getManager();
         try {
             $cart = $em->getRepository("AppBundle:Cart")
@@ -297,6 +298,31 @@ class CartController extends BaseController
         }
 
         return new JsonResponse($response);
+    }
+
+    /**
+     * @Route("/carts/test", name="carts_test")
+     * @Method("GET")
+     * @return Response List of products with quantities.
+     * @throws \Exception
+     */
+    public function testAction() {
+        return new Response(__DIR__.DIRECTORY_SEPARATOR.'json-api-schema.json');
+        //return new JsonResponse( $this->getParameter("products_do_not_remove") );
+    }
+
+    /**
+     * @param Cart $cart
+     * @return string
+     */
+    private function cartJsonResponse($cart, $resourceObject = true) {
+        return json_encode([
+           "data" => [
+               "id" => $cart->getId(),
+               "totalPrice" => $cart->getTotalPrice(),
+               "created" => $cart->getDateCreated()
+           ]
+        ]);
     }
 
 }

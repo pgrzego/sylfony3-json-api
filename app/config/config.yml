@@ -8,6 +8,7 @@ imports:
 parameters:
     locale: en
     products_per_page: 3
+    products_do_not_remove: [1,2,3,4,5]
 
 framework:
     #esi:             ~

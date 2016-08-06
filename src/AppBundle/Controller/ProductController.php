@@ -78,6 +78,11 @@ class ProductController extends BaseController
      */
     public function removeAction($productId) {
         $productId = intval($productId);
+
+        if ( in_array($productId, $this->getParameter("products_do_not_remove")) ) {
+            return $this->createErrorResponse("Invalid Product", "This product can't be removed", 403);
+        }
+
         $em = $this->getDoctrine()->getManager();
         try {
             $product = $em->getRepository("AppBundle:Product")
