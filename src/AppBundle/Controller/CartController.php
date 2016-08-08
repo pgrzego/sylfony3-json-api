@@ -460,13 +460,13 @@ class CartController extends BaseController
      * @throws \Exception
      */
     public function testAction() {
-        $response = $this->forward("AppBundle:Cart:show",["cartId"=>8]);
-        //$response = $this->forward("AppBundle:Cart:listProducts",["cartId"=>8]);
-        //$response = $this->forward("AppBundle:Cart:showProductsRelations",["cartId"=>7]);
+        $response = $this->forward("AppBundle:Cart:show",["cartId"=>1]);
+        //$response = $this->forward("AppBundle:Cart:listProducts",["cartId"=>1]);
+        //$response = $this->forward("AppBundle:Cart:showProductsRelations",["cartId"=>1]);
 
         // Validate
         $refResolver = new RefResolver(new UriRetriever(), new UriResolver());
-        $schema = $refResolver->resolve('file://' . __DIR__.DIRECTORY_SEPARATOR.'json-api-schema.js');
+        $schema = $refResolver->resolve('file://' . __DIR__.'/../../../app/Resources/json-api-schema.js');
         $validator = new Validator();
         $validator->check(json_decode($response->getContent()), $schema);
 

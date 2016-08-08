@@ -66,23 +66,25 @@ class BaseController extends Controller
     protected function createNotFoundResponse($elementType, $elementId, $customDescription="") {
 /*
         {
-            "errors": {
-                "id": 1,
-                "status": 404,
-                "code": "not-found",
-                "title": "Cart not found",
-                "detail": "Cart 1 was not found on this server"
-            }
+            "errors": [
+                {
+                    "id": "1",
+                    "status": "404",
+                    "code": "not-found",
+                    "title": "Cart not found",
+                    "detail": "Cart 1 was not found on this server"
+                }
+            ]
         }
 */
         $data = [
-            "id" => 1,
-            "status" => 404,
+            "id" => "1",
+            "status" => "404",
             "code" => "not-found",
             "title" => $elementType . " not found",
             "detail" => (($customDescription)?$customDescription:$elementType . " ". $elementId . " was not found on this server")
         ];
-        return $this->createApiResponse(["errors"=>$data], Response::HTTP_NOT_FOUND);
+        return $this->createApiResponse(["errors"=>[$data]], Response::HTTP_NOT_FOUND);
     }
 
     protected function createErrorResponse($title, $detail, $statusCode=Response::HTTP_BAD_REQUEST) {
@@ -91,6 +93,6 @@ class BaseController extends Controller
             "title" => $title,
             "detail" => $detail
         ];
-        return $this->createApiResponse(["errors"=>$data], $statusCode);
+        return $this->createApiResponse(["errors"=>[$data]], $statusCode);
     }
 }
