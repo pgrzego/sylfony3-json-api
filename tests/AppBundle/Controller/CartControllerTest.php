@@ -11,55 +11,137 @@ namespace Tests\AppBundle\Controller;
 
 
 use AppBundle\Test\ApiTestCase;
-use JsonSchema\RefResolver;
-use JsonSchema\Uri\UriResolver;
-use JsonSchema\Uri\UriRetriever;
-use JsonSchema\Validator;
 use Symfony\Component\HttpFoundation\Response;
 
 class CartControllerTest extends ApiTestCase
 {
 
-    public function testShowAction() {
+    public function testAddActionNoContent() {
         $this->client->request('POST', '/carts');
         $response = $this->client->getResponse();
-        // Assert a 201 status code
+
+        $this->assertEquals(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            $response->getStatusCode(),
+            "Status code of the Error response should be ".Response::HTTP_UNPROCESSABLE_ENTITY
+        );
+
+        $dataContent = json_decode($response->getContent(), true);
+        $this->assertTrue(
+            array_key_exists("errors", $dataContent) &&
+            array_key_exists("status", $dataContent["errors"]) &&
+            $dataContent["errors"]["status"] == Response::HTTP_UNPROCESSABLE_ENTITY,
+            "The content of the response should have a proper data format"
+        );
+    }
+
+    public function testAddActionBadContent() {
+        $this->client->request(
+            'POST',
+            '/carts',
+            array(),
+            array(),
+            array(),
+            '{
+              "data": {
+                "type": "cartoons",
+                "attributes": {},
+                "relationships": {
+                  "products": {
+                    "data": [
+                        { "type": "products", "id": "2" },
+                        { "type": "products", "id": "3" }
+                      ]
+                  }
+                }
+              }
+            }'
+        );
+        $response = $this->client->getResponse();
+
+        $this->assertEquals(
+            Response::HTTP_CONFLICT,
+            $response->getStatusCode(),
+            "Status code of the Error response should be ".Response::HTTP_CONFLICT
+        );
+
+        $dataContent = json_decode($response->getContent(), true);
+        $this->assertTrue(
+            array_key_exists("errors", $dataContent) &&
+            array_key_exists("status", $dataContent["errors"]) &&
+            $dataContent["errors"]["status"] == Response::HTTP_CONFLICT,
+            "The content of the response should have a proper data format"
+        );
+    }
+
+    public function testAddActionCorrect() {
+        $this->client->request(
+            'POST',
+            '/carts',
+            array(),
+            array(),
+            array(),
+            '{
+              "data": {
+                "type": "carts",
+                "attributes": {},
+                "relationships": {
+                  "products": {
+                    "data": [
+                        { "type": "products", "id": "2" },
+                        { "type": "products", "id": "3" }
+                      ]
+                  }
+                }
+              }
+            }'
+        );
+        $response = $this->client->getResponse();
+
         $this->assertEquals(
             Response::HTTP_CREATED,
             $response->getStatusCode(),
-            "Status code of the Response should be ".Response::HTTP_CREATED
+            "Status code of the Error response should be ".Response::HTTP_CREATED
         );
-        // Assert that the "Content-Type" header is "application/vnd.api+json"
+
+        $responseData = json_decode($response->getContent(), true);
         $this->assertTrue(
-            $this->client->getResponse()->headers->contains(
-                'Content-Type',
-                'application/vnd.api+json'
-            ),
-            'the "Content-Type" header is "application/vnd.api+json"' // optional message shown on failure
+            array_key_exists("data", $responseData),
+            "The content of the response should have a 'data' top level key"
         );
-        $responseData = json_decode($response->getContent(),true);
-
-        $refResolver = new RefResolver(new UriRetriever(), new UriResolver());
-        $schema = $refResolver->resolve('file://' . __DIR__.DIRECTORY_SEPARATOR.'json-api-schema.js');
-
-// Validate
-        $validator = new Validator();
-        $validator->check($responseData, $schema);
 
         $this->assertTrue(
-            $validator->isValid(),
-            "Checking if response content is a valid JSON API object"
+            array_key_exists("type", $responseData["data"]) &&
+            $responseData["data"]["type"]=="carts",
+            "The content of the response should return a correct type of data"
         );
 
-        if ($validator->isValid()) {
-            echo "The supplied JSON validates against the schema.\n";
-        } else {
-            echo "JSON does not validate. Violations:\n";
-            foreach ($validator->getErrors() as $error) {
-                echo sprintf("[%s] %s\n", $error['property'], $error['message']);
-            }
-        }
+        $this->assertTrue(
+            array_key_exists("id", $responseData["data"]) &&
+            intval($responseData["data"]["id"])>0,
+            "The content of the response should return an ID of the new object"
+        );
 
+        //Assert all the fields:
+        $this->assertArrayHasKey("data", $responseData);
+        $this->assertArrayHasKey("type", $responseData["data"]);
+        $this->assertArrayHasKey("id", $responseData["data"]);
+        $this->assertArrayHasKey("attributes", $responseData["data"]);
+        $this->assertArrayHasKey("id", $responseData["data"]["attributes"]);
+        $this->assertArrayHasKey("totalPrice", $responseData["data"]["attributes"]);
+        $this->assertArrayHasKey("created", $responseData["data"]["attributes"]);
 
+        // TODO v2 retrieve the total price so it is not hardcoded
+        $this->assertEquals(
+            $responseData["data"]["attributes"]["totalPrice"],
+            "6.98",
+            "The value of the total price should be \"6.98\" "
+        );
+
+        $this->assertEquals(
+            substr($responseData["data"]["attributes"]["created"],0,10),
+            date("Y-m-d"),
+            "The value of created should be ".date("Y-m-d")
+        );
     }
 }

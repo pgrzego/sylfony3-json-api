@@ -8,11 +8,8 @@
 
 namespace AppBundle\Test;
 
-
+use Doctrine\ORM\EntityManager;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Doctrine\Common\DataFixtures\Loader;
-use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
-use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Symfony\Bundle\FrameworkBundle\Client;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
@@ -22,20 +19,26 @@ class ApiTestCase extends WebTestCase
     /** @var Client */
     protected $client;
     /** @var  ConsoleOutput */
-    private $output;
+    protected $output;
+    /** @var EntityManager */
+    protected $em;
 
     public function setUp()
     {
-        $this->client = $this->createClient();
-        $loader = new Loader();
-        $loader->loadFromDirectory('src/AppBundle/DataFixtures/ORM');
-        $purger = new ORMPurger();
+        $kernel = static::createKernel();
+        $kernel->boot();
+        $this->em = $kernel->getContainer()->get('doctrine.orm.entity_manager');
+        $this->em->beginTransaction();
 
-        $executor = new ORMExecutor($this->client->getContainer()->get('doctrine')->getManager(), $purger);
-        $executor->execute($loader->getFixtures());
+        $this->client = $this->createClient();
+
         parent::setUp();
     }
 
+    public function tearDown()
+    {
+        $this->em->rollback();
+    }
 
     /**
      * @param \Exception|\Throwable $e

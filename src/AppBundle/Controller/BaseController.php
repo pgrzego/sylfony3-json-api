@@ -39,7 +39,7 @@ class BaseController extends Controller
      * @param int $statusCode
      * @return Response
      */
-    protected function createValidationErrorResponse($errors, $title="Common error", $statusCode = Response::HTTP_UNPROCESSABLE_ENTITY) {
+    protected function createValidationErrorResponse($errors, $title="Validation error", $statusCode = Response::HTTP_UNPROCESSABLE_ENTITY) {
 
         $data = [];
         $i = 0;
@@ -64,6 +64,17 @@ class BaseController extends Controller
      * @return Response
      */
     protected function createNotFoundResponse($elementType, $elementId, $customDescription="") {
+/*
+        {
+            "errors": {
+                "id": 1,
+                "status": 404,
+                "code": "not-found",
+                "title": "Cart not found",
+                "detail": "Cart 1 was not found on this server"
+            }
+        }
+*/
         $data = [
             "id" => 1,
             "status" => 404,
@@ -71,7 +82,7 @@ class BaseController extends Controller
             "title" => $elementType . " not found",
             "detail" => (($customDescription)?$customDescription:$elementType . " ". $elementId . " was not found on this server")
         ];
-        return $this->createApiResponse($data, Response::HTTP_NOT_FOUND);
+        return $this->createApiResponse(["errors"=>$data], Response::HTTP_NOT_FOUND);
     }
 
     protected function createErrorResponse($title, $detail, $statusCode=Response::HTTP_BAD_REQUEST) {

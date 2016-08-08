@@ -56,6 +56,13 @@ class Product implements JsonSerializable
      */
     private $dateAdded;
 
+    /**
+     * @param int $id
+     */
+    public function setId($id)
+    {
+        $this->id = $id;
+    }
 
     /**
      * Get id
